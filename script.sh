@@ -80,7 +80,7 @@ sysctl_optimizations() {
     vm.min_free_kbytes = 65536
     vm.swappiness = 10
     vm.vfs_cache_pressure = 250
-    EOF
+EOF
 
     sysctl -p
     echo -e "${GREEN}Network optimization applied.${NC}"
@@ -105,7 +105,7 @@ limits_optimizations() {
     ulimit -u unlimited
     ulimit -v unlimited
     ulimit -x unlimited
-    EOF
+EOF
 
     echo -e "${GREEN}System limits optimized.${NC}"
 }
