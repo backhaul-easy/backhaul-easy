@@ -44,12 +44,6 @@ Backhaul provides a robust solution with:
 - Built-in security features
 - Easy configuration and management
 
-Backhaul is inspired by [Rathole](https://github.com/rapiz1/rathole) and takes it a step further with enhanced features and performance optimizations.
-
-## 🙏 Acknowledgments
-
-This project is built on top of the amazing [Backhaul](https://github.com/Musixal/Backhaul) project by [Musixal](https://github.com/Musixal). We are deeply grateful for their work in creating this high-performance reverse tunneling solution. This CLI tool aims to make Backhaul more accessible and easier to use while maintaining all its powerful features.
-
 ## 🌟 Features
 
 - 📱 Interactive menu-driven interface
@@ -154,6 +148,12 @@ If you find this tool helpful, please consider giving it a star on GitHub!
 - Always use strong tokens for tunnel authentication
 - Keep your system and the script up to date
 - Monitor logs regularly for any suspicious activity
+
+## 🙏 Acknowledgments
+
+This project is built on top of the amazing [Backhaul](https://github.com/Musixal/Backhaul) project by [Musixal](https://github.com/Musixal). We are deeply grateful for their work in creating this high-performance reverse tunneling solution. This CLI tool aims to make Backhaul more accessible and easier to use while maintaining all its powerful features.
+
+Backhaul is inspired by [Rathole](https://github.com/rapiz1/rathole) and takes it a step further with enhanced features and performance optimizations.
 
 ---
 
