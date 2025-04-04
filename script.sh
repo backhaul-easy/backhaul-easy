@@ -159,8 +159,11 @@ setup_backhaul() {
     wget -q https://github.com/Musixal/Backhaul/releases/download/v0.6.5/backhaul_linux_${ARCH}.tar.gz -O "$SCRIPT_DIR/backhaul_linux_${ARCH}.tar.gz"
     tar -xzf "$SCRIPT_DIR/backhaul_linux_${ARCH}.tar.gz" -C "$SCRIPT_DIR" && cd "$SCRIPT_DIR" && rm backhaul_linux_${ARCH}.tar.gz LICENSE README.md
 
-    echo -e "${CYAN}Choose setup type:${NC}\n${YELLOW}1) Iran Server${NC}\n${YELLOW}2) Kharej Server${NC}\n${YELLOW}0) Back to Main Menu${NC}"
-    read -rp "Select option [0-2]: " TYPE
+    echo -e "${CYAN}Select your server type:${NC}"
+    echo -e "${YELLOW}1) Restricted Server${NC} - Inside restricted network (behind NAT/firewall)"
+    echo -e "${YELLOW}2) Public Server${NC} - Outside restricted network (public access)"
+    echo -e "${YELLOW}0) Back to Main Menu${NC}"
+    read -rp "Enter your choice [0-2]: " TYPE
 
     [[ "$TYPE" == "0" ]] && return
     [[ ! $TYPE =~ ^[12]$ ]] && { echo -e "${RED}Invalid choice.${NC}"; sleep 2; return; }
@@ -169,11 +172,11 @@ setup_backhaul() {
     read -rp "Enter Token: " TOKEN
 
     if [[ "$TYPE" == "1" ]]; then
-        CONFIG="$SCRIPT_DIR/iran${TUNNEL_PORT}.toml"
-        SERVICE="backhaul-iran${TUNNEL_PORT}"
+        CONFIG="$SCRIPT_DIR/restricted${TUNNEL_PORT}.toml"
+        SERVICE="backhaul-restricted${TUNNEL_PORT}"
     else
-        CONFIG="$SCRIPT_DIR/kharej${TUNNEL_PORT}.toml"
-        SERVICE="backhaul-kharej${TUNNEL_PORT}"
+        CONFIG="$SCRIPT_DIR/public${TUNNEL_PORT}.toml"
+        SERVICE="backhaul-public${TUNNEL_PORT}"
     fi
 
     if [[ "$TYPE" == "1" ]]; then
@@ -187,10 +190,10 @@ token="${TOKEN}"
 ports=["${PORT_ARRAY}"]
 EOF
     else
-        read -rp "Enter Iran Server IP: " IRAN_IP
+        read -rp "Enter Restricted Server IP: " RESTRICTED_IP
         cat > "$CONFIG" <<EOF
 [client]
-remote_addr="${IRAN_IP}:${TUNNEL_PORT}"
+remote_addr="${RESTRICTED_IP}:${TUNNEL_PORT}"
 token="${TOKEN}"
 EOF
     fi

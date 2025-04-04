@@ -25,6 +25,27 @@ A powerful and user-friendly CLI tool for managing backhaul configurations with 
 
 </div>
 
+## 🔍 What is Backhaul?
+
+Backhaul is a high-performance reverse tunneling solution that solves a critical problem in modern networking: **NAT traversal and firewall bypass**. 
+
+### The Problem
+In today's internet landscape, many devices and servers are behind NAT (Network Address Translation) or firewalls, making direct connections impossible. This creates challenges for:
+- Accessing services behind NAT
+- Establishing direct connections between devices
+- Bypassing network restrictions
+- Maintaining stable connections in restricted environments
+
+### The Solution
+Backhaul provides a robust solution with:
+- Lightning-fast reverse tunneling
+- Support for multiple protocols (TCP, UDP, WebSocket)
+- High concurrency handling
+- Built-in security features
+- Easy configuration and management
+
+Backhaul is inspired by [Rathole](https://github.com/rapiz1/rathole) and takes it a step further with enhanced features and performance optimizations.
+
 ## 🌟 Features
 
 - 📱 Interactive menu-driven interface
@@ -63,7 +84,7 @@ When you run the tool, you'll be greeted with this interactive menu:
 
 2. **Backhaul Installation & Setup**
    - Easy tunnel configuration
-   - Support for both Iran and Kharej servers
+   - Support for both Restricted and Public servers
    - Automatic service management
 
 3. **Tunnel Management**
@@ -89,10 +110,24 @@ The tool provides an interactive menu for all configurations. You'll need:
 
 - Port numbers for tunnels
 - Token for authentication
-- Server IP addresses (for Kharej setup)
-- Port forwarding rules (for Iran setup)
+- Server IP addresses (for Public server setup)
+- Port forwarding rules (for Restricted server setup)
 
-## 🔍 Troubleshooting
+### Server Types
+
+1. **Restricted Server**
+   - Located inside a restricted network environment
+   - Acts as the server endpoint for the tunnel
+   - Handles port forwarding for services
+   - Typically behind NAT or firewall restrictions
+
+2. **Public Server**
+   - Located outside restricted network environments
+   - Acts as the client endpoint for the tunnel
+   - Connects to the Restricted Server
+   - Typically has public IP access
+
+## �� Troubleshooting
 
 1. Check tunnel status:
    ```bash
