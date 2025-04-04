@@ -98,7 +98,6 @@ menu() {
 }
 
 update_script() {
-update_script() {
     local script_url="https://raw.githubusercontent.com/masihjahangiri/backhaul-easy/main/script.sh"
     local tmp_script
     tmp_script="$(mktemp /tmp/bh-update.XXXXXX)"
