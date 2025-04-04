@@ -39,8 +39,6 @@ if [[ -f "$0" && ! "$0" =~ ^/dev/fd/ ]]; then
 fi
 
 SCRIPT_DIR="$HOME/backhaul-easy"
-CONFIG_DIR="$SCRIPT_DIR/configs"
-mkdir -p "$CONFIG_DIR"
 
 menu() {
     while true; do
@@ -170,8 +168,13 @@ setup_backhaul() {
     read -rp "Enter Tunnel Port: " TUNNEL_PORT
     read -rp "Enter Token: " TOKEN
 
-    CONFIG="$CONFIG_DIR/${TYPE}_${TUNNEL_PORT}.toml"
-    SERVICE="backhaul-${TYPE}_${TUNNEL_PORT}"
+    if [[ "$TYPE" == "1" ]]; then
+        CONFIG="$SCRIPT_DIR/iran${TUNNEL_PORT}.toml"
+        SERVICE="backhaul-iran${TUNNEL_PORT}"
+    else
+        CONFIG="$SCRIPT_DIR/kharej${TUNNEL_PORT}.toml"
+        SERVICE="backhaul-kharej${TUNNEL_PORT}"
+    fi
 
     if [[ "$TYPE" == "1" ]]; then
         read -rp "Port Forwarding (comma-separated): " PORTS
@@ -234,7 +237,7 @@ manage_tunnels() {
         fi
 
         TUNNEL="${TUNNELS[$((TUNNUM-1))]}"
-        CONFIG_FILE="$CONFIG_DIR/${TUNNEL#backhaul-}.toml"
+        CONFIG_FILE="$SCRIPT_DIR/${TUNNEL#backhaul-}.toml"
 
         while true; do
             clear
