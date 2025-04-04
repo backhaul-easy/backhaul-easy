@@ -39,43 +39,59 @@ CONFIG_DIR="$SCRIPT_DIR/configs"
 mkdir -p "$CONFIG_DIR"
 
 menu() {
-    clear
-    echo -e "$LOGO"
-    echo -e "${CYAN}Select an option:${NC}"
-    echo -e "${YELLOW}1) System & Network Optimizations${NC}"
-    echo -e "${YELLOW}2) Install Backhaul and Setup Tunnel${NC}"
-    echo -e "${YELLOW}3) Manage Backhaul Tunnels${NC}"
-    echo -e "${YELLOW}4) Update Script from GitHub${NC}"
-    echo -e "${YELLOW}0) Exit${NC}"
-    read -rp "Enter your choice: " choice
+    while true; do
+        clear
+        echo -e "$LOGO"
+        echo -e "${CYAN}Select an option:${NC}"
+        echo -e "${YELLOW}1) System & Network Optimizations${NC}"
+        echo -e "${YELLOW}2) Install Backhaul and Setup Tunnel${NC}"
+        echo -e "${YELLOW}3) Manage Backhaul Tunnels${NC}"
+        echo -e "${YELLOW}4) Update Script from GitHub${NC}"
+        echo -e "${YELLOW}0) Exit${NC}"
+        read -rp "Enter your choice: " choice
 
-    case $choice in
-        1)
-            sysctl_optimizations
-            limits_optimizations
-            read -rp "Reboot now? (y/n): " REBOOT
-            [[ $REBOOT =~ ^[Yy]$ ]] && reboot
-            ;;
-        2)
-            setup_backhaul
-            ;;
-        3)
-            manage_tunnels
-            ;;
-        4)
-            curl -fsSL https://raw.githubusercontent.com/masihjahangiri/backhaul-easy/main/script.sh -o "$0"
-            chmod +x "$0"
-            echo -e "${GREEN}Script updated. Please restart to apply changes.${NC}"
-            exit 0
-            ;;
-        0)
-            clear; exit 0
-            ;;
-        *)
-            echo -e "${RED}Invalid option.${NC}"; sleep 2
-            ;;
-    esac
-    menu
+        case $choice in
+            1)
+                sysctl_optimizations
+                limits_optimizations
+                read -rp "Reboot now? (y/n): " REBOOT
+                [[ $REBOOT =~ ^[Yy]$ ]] && reboot
+                ;;
+            2)
+                setup_backhaul
+                ;;
+            3)
+                manage_tunnels
+                ;;
+            4)
+                update_script
+                ;;
+            0)
+                clear
+                exit 0
+                ;;
+            *)
+                echo -e "${RED}Invalid option.${NC}"
+                sleep 2
+                ;;
+        esac
+    done
+}
+
+update_script() {
+    local script_url="https://raw.githubusercontent.com/masihjahangiri/backhaul-easy/main/script.sh"
+    echo -e "${CYAN}Updating script from GitHub...${NC}"
+    
+    if curl -fsSL "$script_url" -o "$0"; then
+        chmod +x "$0"
+        echo -e "${GREEN}Script updated successfully.${NC}"
+        echo -e "${GREEN}Reloading the updated script...${NC}"
+        sleep 2
+        exec "$0"
+    else
+        echo -e "${RED}Failed to update the script. Please check your network connection or URL.${NC}"
+        sleep 2
+    fi
 }
 
 sysctl_optimizations() {
