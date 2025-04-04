@@ -26,12 +26,26 @@ ${NC}"
 [[ $EUID -ne 0 ]] && { echo -e "${RED}This script must be run as root${NC}"; exit 1; }
 
 # Install short command alias "bh"
-if [[ ! -f /usr/local/bin/bh ]]; then
+BH_LINK="/usr/local/bin/bh"
+CURRENT_PATH="$(realpath "$0")"
+
+if [[ -L "$BH_LINK" && ! -e "$BH_LINK" ]]; then
+    echo -e "${YELLOW}Fixing broken symlink: bh${NC}"
+    sudo rm "$BH_LINK"
+fi
+
+if [[ ! -e "$BH_LINK" ]]; then
     echo -e "${YELLOW}Installing short command: bh${NC}"
-    ln -s "$(realpath "$0")" /usr/local/bin/bh
-    chmod +x /usr/local/bin/bh
+    sudo ln -s "$CURRENT_PATH" "$BH_LINK"
+    sudo chmod +x "$BH_LINK"
     echo -e "${GREEN}You can now use 'bh' to run this script.${NC}"
     sleep 2
+elif [[ -L "$BH_LINK" && "$(realpath "$BH_LINK")" != "$CURRENT_PATH" ]]; then
+    echo -e "${YELLOW}Updating existing bh symlink to point to this script.${NC}"
+    sudo ln -sf "$CURRENT_PATH" "$BH_LINK"
+    echo -e "${GREEN}Symlink updated.${NC}"
+else
+    echo -e "${CYAN}Shortcut 'bh' already correctly configured.${NC}"
 fi
 
 SCRIPT_DIR="$HOME/backhaul-easy"
