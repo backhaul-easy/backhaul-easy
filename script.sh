@@ -141,22 +141,39 @@ EOF
 
 manage_tunnels() {
     clear
-    echo -e "${CYAN}Active Backhaul Tunnels:${NC}"
-    systemctl list-units 'backhaul-*.service' --no-pager
-    echo -e "\n${YELLOW}1) View Tunnel Logs${NC}\n${YELLOW}2) Remove Tunnel${NC}\n${YELLOW}3) Back to Main Menu${NC}"
+    mapfile -t TUNNELS < <(systemctl list-units --type=service --all | grep backhaul- | awk '{print $1}')
+    if [[ ${#TUNNELS[@]} -eq 0 ]]; then
+        echo -e "${YELLOW}No Backhaul tunnels found.${NC}"; sleep 2; return
+    fi
+
+    echo -e "${CYAN}Select a Backhaul Tunnel:${NC}"
+    for i in "${!TUNNELS[@]}"; do
+        echo -e "${YELLOW}$((i+1)))${NC} ${TUNNELS[$i]}"
+    done
+    read -rp "Enter number: " TUNNUM
+
+    if ! [[ "$TUNNUM" =~ ^[0-9]+$ ]] || (( TUNNUM < 1 || TUNNUM > ${#TUNNELS[@]} )); then
+        echo -e "${RED}Invalid selection.${NC}"; sleep 2; return
+    fi
+
+    TUNNEL="${TUNNELS[$((TUNNUM-1))]}"
+    clear
+    echo -e "${CYAN}Tunnel: $TUNNEL${NC}"
+    systemctl status "$TUNNEL" --no-pager | grep -E 'Loaded|Active|ExecStart'
+
+    echo -e "\n${YELLOW}1) View Logs${NC}\n${YELLOW}2) Stop & Remove Tunnel${NC}\n${YELLOW}3) Back${NC}"
     read -rp "Choose an action: " action
+
     case $action in
         1)
-            read -rp "Enter tunnel name (e.g., backhaul-iran8080): " log_tunnel
-            journalctl -u ${log_tunnel}.service --no-pager | less
+            journalctl -u "$TUNNEL" --no-pager | less
             ;;
         2)
-            read -rp "Enter tunnel name to remove: " rm_tunnel
-            systemctl stop ${rm_tunnel}.service
-            systemctl disable ${rm_tunnel}.service
-            rm /etc/systemd/system/${rm_tunnel}.service
-            rm /root/${rm_tunnel#backhaul-}.toml
-            echo -e "${GREEN}Tunnel ${rm_tunnel} removed.${NC}"; sleep 2
+            systemctl stop "$TUNNEL"
+            systemctl disable "$TUNNEL"
+            rm -f "/etc/systemd/system/$TUNNEL"
+            rm -f "/root/${TUNNEL#backhaul-}.toml"
+            echo -e "${GREEN}Tunnel $TUNNEL removed.${NC}"; sleep 2
             ;;
         3)
             return
