@@ -1,0 +1,64 @@
+name: Generate Changelog and Create Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Generate changelog
+        id: changelog
+        uses: metcalfc/changelog-generator@v4.1.0
+        with:
+          mytoken: ${{ secrets.GITHUB_TOKEN }}
+          base-ref: ${{ github.ref_name }}
+
+      - name: Update CHANGELOG.md
+        run: |
+          # Get the tag name
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          VERSION=${TAG_NAME#v}
+          DATE=$(date +%Y-%m-%d)
+          
+          # Read existing changelog
+          CHANGELOG=$(cat CHANGELOG.md)
+          
+          # Create new changelog entry
+          NEW_ENTRY="## [${VERSION}] - ${DATE}\n\n${{ steps.changelog.outputs.changelog }}\n"
+          
+          # Update the link reference at the bottom
+          LINK_REF="[${VERSION}]: https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG_NAME}"
+          
+          # Insert new entry after header (after line 5)
+          sed -i "5a\\${NEW_ENTRY}" CHANGELOG.md
+          
+          # Append link reference at the end
+          echo ${LINK_REF} >> CHANGELOG.md
+          
+          # Commit and push changes
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add CHANGELOG.md
+          git commit -m "Update CHANGELOG.md for ${TAG_NAME}" || echo "No changes to commit"
+          git push
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          body: |
+            ## Changes in this Release
+            
+            ${{ steps.changelog.outputs.changelog }}
+            
+            For full changelog, see [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md)
+          token: ${{ secrets.GITHUB_TOKEN }} 
