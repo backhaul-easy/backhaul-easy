@@ -161,9 +161,10 @@ setup_backhaul() {
     wget -q https://github.com/Musixal/Backhaul/releases/download/v0.6.5/backhaul_linux_${ARCH}.tar.gz
     tar -xzf backhaul_linux_${ARCH}.tar.gz -C "$SCRIPT_DIR" && rm backhaul_linux_${ARCH}.tar.gz LICENSE README.md
 
-    echo -e "${CYAN}Choose setup type:${NC}\n${YELLOW}1) Iran Server${NC}\n${YELLOW}2) Kharej Server${NC}"
-    read -rp "Select option [1/2]: " TYPE
+    echo -e "${CYAN}Choose setup type:${NC}\n${YELLOW}1) Iran Server${NC}\n${YELLOW}2) Kharej Server${NC}\n${YELLOW}0) Back to Main Menu${NC}"
+    read -rp "Select option [0-2]: " TYPE
 
+    [[ "$TYPE" == "0" ]] && return
     [[ ! $TYPE =~ ^[12]$ ]] && { echo -e "${RED}Invalid choice.${NC}"; sleep 2; return; }
 
     read -rp "Enter Tunnel Port: " TUNNEL_PORT
