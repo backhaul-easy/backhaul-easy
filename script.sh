@@ -8,7 +8,6 @@ CYAN='\033[1;36m'
 MAGENTA='\033[1;35m'
 NC='\033[0m'
 
-# ASCII Art Logo
 LOGO="
 ${MAGENTA}██████╗  █████╗  ██████╗██╗  ██╗██╗  ██╗ █████╗ ██╗   ██╗██╗     
 ${MAGENTA}██╔══██╗██╔══██╗██╔════╝██║ ██╔╝██║  ██║██╔══██╗██║   ██║██║     
@@ -24,54 +23,45 @@ ${MAGENTA}███████╗██║  ██║███████║  
 ${MAGENTA}╚══════╝╚═╝  ╚═╝╚══════╝   ╚═╝   
 ${NC}"
 
-# Check for root permission
-if [[ $EUID -ne 0 ]]; then
-   echo -e "${RED}This script must be run as root${NC}"
-   exit 1
-fi
+[[ $EUID -ne 0 ]] && { echo -e "${RED}This script must be run as root${NC}"; exit 1; }
 
-SYS_PATH="/etc/sysctl.conf"
-PROF_PATH="/etc/profile"
-
-# Interactive Menu
 menu() {
     clear
     echo -e "$LOGO"
     echo -e "${CYAN}Select an option:${NC}"
     echo -e "${YELLOW}1) System & Network Optimizations${NC}"
     echo -e "${YELLOW}2) Install Backhaul and Setup Tunnel${NC}"
-    echo -e "${YELLOW}3) Exit${NC}"
+    echo -e "${YELLOW}3) Manage Backhaul Tunnels${NC}"
+    echo -e "${YELLOW}4) Exit${NC}"
     read -rp "Enter your choice: " choice
 
     case $choice in
         1)
             sysctl_optimizations
             limits_optimizations
-            read -rp "Would you like to reboot now? (y/n): " REBOOT
-            clear
+            read -rp "Reboot now? (y/n): " REBOOT
             [[ $REBOOT =~ ^[Yy]$ ]] && reboot
             ;;
         2)
             setup_backhaul
-            clear
             ;;
         3)
-            clear
-            exit 0
+            manage_tunnels
+            ;;
+        4)
+            clear; exit 0
             ;;
         *)
-            echo -e "${RED}Invalid option.${NC}"
+            echo -e "${RED}Invalid option.${NC}"; sleep 2
             ;;
     esac
-    read -rp "Press any key to return to menu..." -n1
     menu
 }
 
-# Network Optimization
 sysctl_optimizations() {
-    cp $SYS_PATH /etc/sysctl.conf.bak
-    sed -i '/^#/d;/^$/d' "$SYS_PATH"
-    cat <<EOF >> "$SYS_PATH"
+    cp /etc/sysctl.conf /etc/sysctl.conf.bak
+    sed -i '/^#/d;/^$/d' /etc/sysctl.conf
+    cat <<EOF >> /etc/sysctl.conf
 fs.file-max = 67108864
 net.core.default_qdisc = fq_codel
 net.core.netdev_max_backlog = 32768
@@ -81,79 +71,101 @@ EOF
     sysctl -p &>/dev/null
 }
 
-# Ulimit Optimization
 limits_optimizations() {
-    sed -i '/ulimit/d' "$PROF_PATH"
-    echo "ulimit -n 1048576" >> "$PROF_PATH"
+    sed -i '/ulimit/d' /etc/profile
+    echo "ulimit -n 1048576" >> /etc/profile
 }
 
-# Detect Architecture
 detect_arch() {
-    ARCH=$(uname -m)
-    if [[ "$ARCH" == "x86_64" ]]; then
-        echo "amd64"
-    elif [[ "$ARCH" == "aarch64" ]]; then
-        echo "arm64"
-    else
-        echo "unsupported"
-    fi
+    case $(uname -m) in
+        x86_64) echo amd64 ;;
+        aarch64) echo arm64 ;;
+        *) echo unsupported ;;
+    esac
 }
 
-# Backhaul Installation & Tunnel Setup
 setup_backhaul() {
     ARCH=$(detect_arch)
-    [[ "$ARCH" == "unsupported" ]] && { echo -e "${RED}Unsupported architecture.${NC}"; return; }
+    [[ "$ARCH" == "unsupported" ]] && { echo -e "${RED}Unsupported architecture.${NC}"; sleep 2; return; }
 
     wget -q https://github.com/Musixal/Backhaul/releases/download/v0.6.5/backhaul_linux_${ARCH}.tar.gz
     tar -xzf backhaul_linux_${ARCH}.tar.gz && rm backhaul_linux_${ARCH}.tar.gz LICENSE README.md
 
-    echo -e "${CYAN}Choose setup type:${NC}"
-    echo -e "${YELLOW}1) Iran Server${NC}"
-    echo -e "${YELLOW}2) Kharej Client${NC}"
+    echo -e "${CYAN}Choose setup type:${NC}\n${YELLOW}1) Iran Server${NC}\n${YELLOW}2) Kharej Server${NC}"
     read -rp "Select option [1/2]: " TYPE
+
+    [[ ! $TYPE =~ ^[12]$ ]] && { echo -e "${RED}Invalid choice.${NC}"; sleep 2; return; }
 
     read -rp "Enter Tunnel Port: " TUNNEL_PORT
     read -rp "Enter Token: " TOKEN
 
     if [[ "$TYPE" == "1" ]]; then
-        read -rp "Enter Port Forwarding Rules (comma-separated): " PORTS
+        read -rp "Port Forwarding (comma-separated): " PORTS
         PORT_ARRAY=$(echo "$PORTS" | sed 's/,/","/g')
-        cat > iran${TUNNEL_PORT}.toml <<EOF
+        CONFIG="iran${TUNNEL_PORT}.toml"
+        cat > $CONFIG <<EOF
 [server]
-bind_addr = "0.0.0.0:${TUNNEL_PORT}"
-transport = "tcp"
-token = "${TOKEN}"
-ports = ["${PORT_ARRAY}"]
+bind_addr="0.0.0.0:${TUNNEL_PORT}"
+transport="tcp"
+token="${TOKEN}"
+ports=["${PORT_ARRAY}"]
 EOF
-        SERVICE_NAME="backhaul-iran${TUNNEL_PORT}"
-    elif [[ "$TYPE" == "2" ]]; then
-        read -rp "Enter Iran Server IP: " IRAN_IP
-        cat > kharej${TUNNEL_PORT}.toml <<EOF
-[client]
-remote_addr = "${IRAN_IP}:${TUNNEL_PORT}"
-token = "${TOKEN}"
-EOF
-        SERVICE_NAME="backhaul-kharej${TUNNEL_PORT}"
+        SERVICE="backhaul-iran${TUNNEL_PORT}"
     else
-        echo -e "${RED}Invalid choice.${NC}"
-        return
+        read -rp "Enter Iran Server IP: " IRAN_IP
+        CONFIG="kharej${TUNNEL_PORT}.toml"
+        cat > $CONFIG <<EOF
+[client]
+remote_addr="${IRAN_IP}:${TUNNEL_PORT}"
+token="${TOKEN}"
+EOF
+        SERVICE="backhaul-kharej${TUNNEL_PORT}"
     fi
 
-    cat > /etc/systemd/system/${SERVICE_NAME}.service <<EOF
+    cat > /etc/systemd/system/${SERVICE}.service <<EOF
 [Unit]
 Description=Backhaul Tunnel
 After=network.target
 
 [Service]
-ExecStart=/root/backhaul -c /root/${SERVICE_NAME#backhaul-}.toml
+ExecStart=/root/backhaul -c /root/$CONFIG
 Restart=always
 RestartSec=3
 
 [Install]
 WantedBy=multi-user.target
 EOF
+    systemctl enable --now ${SERVICE}.service &>/dev/null
+    clear
+}
 
-    systemctl enable --now ${SERVICE_NAME}.service &>/dev/null
+manage_tunnels() {
+    clear
+    echo -e "${CYAN}Active Backhaul Tunnels:${NC}"
+    systemctl list-units 'backhaul-*.service' --no-pager
+    echo -e "\n${YELLOW}1) View Tunnel Logs${NC}\n${YELLOW}2) Remove Tunnel${NC}\n${YELLOW}3) Back to Main Menu${NC}"
+    read -rp "Choose an action: " action
+    case $action in
+        1)
+            read -rp "Enter tunnel name (e.g., backhaul-iran8080): " log_tunnel
+            journalctl -u ${log_tunnel}.service --no-pager | less
+            ;;
+        2)
+            read -rp "Enter tunnel name to remove: " rm_tunnel
+            systemctl stop ${rm_tunnel}.service
+            systemctl disable ${rm_tunnel}.service
+            rm /etc/systemd/system/${rm_tunnel}.service
+            rm /root/${rm_tunnel#backhaul-}.toml
+            echo -e "${GREEN}Tunnel ${rm_tunnel} removed.${NC}"; sleep 2
+            ;;
+        3)
+            return
+            ;;
+        *)
+            echo -e "${RED}Invalid option.${NC}"; sleep 2
+            ;;
+    esac
+    manage_tunnels
 }
 
 menu
