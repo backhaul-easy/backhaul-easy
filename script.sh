@@ -284,20 +284,42 @@ manage_tunnels() {
                     ;;
                 6)
                     echo -e "${YELLOW}Removing tunnel $TUNNEL...${NC}"
-                    # Stop and disable the service first
-                    systemctl stop "$TUNNEL"
-                    systemctl disable "$TUNNEL"
                     
-                    # Remove service file
-                    rm -f "/etc/systemd/system/${TUNNEL}.service"
+                    # Check if service exists
+                    if ! systemctl is-enabled "$TUNNEL" &>/dev/null; then
+                        echo -e "${YELLOW}Service $TUNNEL is not enabled or does not exist.${NC}"
+                    else
+                        # Stop and disable the service
+                        if ! systemctl stop "$TUNNEL"; then
+                            echo -e "${RED}Failed to stop service $TUNNEL.${NC}"
+                        fi
+                        if ! systemctl disable "$TUNNEL"; then
+                            echo -e "${RED}Failed to disable service $TUNNEL.${NC}"
+                        fi
+                    fi
                     
-                    # Remove config file
-                    rm -f "$CONFIG_FILE"
+                    # Remove service file if it exists
+                    if [[ -f "/etc/systemd/system/${TUNNEL}.service" ]]; then
+                        if ! rm -f "/etc/systemd/system/${TUNNEL}.service"; then
+                            echo -e "${RED}Failed to remove service file for $TUNNEL.${NC}"
+                        fi
+                    else
+                        echo -e "${YELLOW}Service file for $TUNNEL does not exist.${NC}"
+                    fi
+                    
+                    # Remove config file if it exists
+                    if [[ -f "$CONFIG_FILE" ]]; then
+                        if ! rm -f "$CONFIG_FILE"; then
+                            echo -e "${RED}Failed to remove config file for $TUNNEL.${NC}"
+                        fi
+                    else
+                        echo -e "${YELLOW}Config file for $TUNNEL does not exist.${NC}"
+                    fi
                     
                     # Reload systemd to reflect changes
                     systemctl daemon-reload
                     
-                    echo -e "${GREEN}Tunnel $TUNNEL has been completely removed.${NC}"
+                    echo -e "${GREEN}Tunnel $TUNNEL removal process completed.${NC}"
                     sleep 2
                     break  # Exit the tunnel management menu after removal
                     ;;
