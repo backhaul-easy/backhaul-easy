@@ -48,12 +48,15 @@ menu() {
             sysctl_optimizations
             limits_optimizations
             read -rp "Would you like to reboot now? (y/n): " REBOOT
+            clear
             [[ $REBOOT =~ ^[Yy]$ ]] && reboot
             ;;
         2)
             setup_backhaul
+            clear
             ;;
         3)
+            clear
             exit 0
             ;;
         *)
@@ -75,15 +78,13 @@ net.core.netdev_max_backlog = 32768
 net.core.optmem_max = 262144
 net.core.somaxconn = 65536
 EOF
-    sysctl -p
-    echo -e "${GREEN}Network optimization applied.${NC}"
+    sysctl -p &>/dev/null
 }
 
 # Ulimit Optimization
 limits_optimizations() {
     sed -i '/ulimit/d' "$PROF_PATH"
     echo "ulimit -n 1048576" >> "$PROF_PATH"
-    echo -e "${GREEN}System limits optimized.${NC}"
 }
 
 # Detect Architecture
@@ -101,14 +102,16 @@ detect_arch() {
 # Backhaul Installation & Tunnel Setup
 setup_backhaul() {
     ARCH=$(detect_arch)
-    if [[ "$ARCH" == "unsupported" ]]; then
-        echo -e "${RED}Unsupported architecture.${NC}"
-        return
-    fi
-    wget https://github.com/Musixal/Backhaul/releases/download/v0.6.5/backhaul_linux_${ARCH}.tar.gz
+    [[ "$ARCH" == "unsupported" ]] && { echo -e "${RED}Unsupported architecture.${NC}"; return; }
+
+    wget -q https://github.com/Musixal/Backhaul/releases/download/v0.6.5/backhaul_linux_${ARCH}.tar.gz
     tar -xzf backhaul_linux_${ARCH}.tar.gz && rm backhaul_linux_${ARCH}.tar.gz LICENSE README.md
 
-    read -rp "Setup as (1) Iran Server or (2) Kharej Client? " TYPE
+    echo -e "${CYAN}Choose setup type:${NC}"
+    echo -e "${YELLOW}1) Iran Server${NC}"
+    echo -e "${YELLOW}2) Kharej Client${NC}"
+    read -rp "Select option [1/2]: " TYPE
+
     read -rp "Enter Tunnel Port: " TUNNEL_PORT
     read -rp "Enter Token: " TOKEN
 
@@ -122,10 +125,7 @@ transport = "tcp"
 token = "${TOKEN}"
 ports = ["${PORT_ARRAY}"]
 EOF
-        cat > /etc/systemd/system/backhaul-iran${TUNNEL_PORT}.service <<EOF
-[Service]
-ExecStart=/root/backhaul -c /root/iran${TUNNEL_PORT}.toml
-EOF
+        SERVICE_NAME="backhaul-iran${TUNNEL_PORT}"
     elif [[ "$TYPE" == "2" ]]; then
         read -rp "Enter Iran Server IP: " IRAN_IP
         cat > kharej${TUNNEL_PORT}.toml <<EOF
@@ -133,17 +133,27 @@ EOF
 remote_addr = "${IRAN_IP}:${TUNNEL_PORT}"
 token = "${TOKEN}"
 EOF
-        cat > /etc/systemd/system/backhaul-kharej${TUNNEL_PORT}.service <<EOF
-[Service]
-ExecStart=/root/backhaul -c /root/kharej${TUNNEL_PORT}.toml
-EOF
+        SERVICE_NAME="backhaul-kharej${TUNNEL_PORT}"
     else
         echo -e "${RED}Invalid choice.${NC}"
         return
     fi
 
-    systemctl enable --now backhaul-*
-    echo -e "${GREEN}Backhaul installed and tunnel setup completed.${NC}"
+    cat > /etc/systemd/system/${SERVICE_NAME}.service <<EOF
+[Unit]
+Description=Backhaul Tunnel
+After=network.target
+
+[Service]
+ExecStart=/root/backhaul -c /root/${SERVICE_NAME#backhaul-}.toml
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    systemctl enable --now ${SERVICE_NAME}.service &>/dev/null
 }
 
 menu
