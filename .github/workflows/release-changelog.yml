@@ -1,4 +1,4 @@
-name: Generate Changelog and Create Release
+name: Generate Changelog and Create Release Automatically
 
 on:
   push:
