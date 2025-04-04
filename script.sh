@@ -29,14 +29,19 @@ ${NC}"
 BH_LINK="/usr/local/bin/bh"
 CURRENT_PATH="$(realpath "$0")"
 
+# Handle broken symlink
 if [[ -L "$BH_LINK" && ! -e "$BH_LINK" ]]; then
     echo -e "${YELLOW}Fixing broken symlink: bh${NC}"
     sudo rm "$BH_LINK"
 fi
 
+# Create or update symlink
 if [[ ! -e "$BH_LINK" ]]; then
     echo -e "${YELLOW}Installing short command: bh${NC}"
-    sudo ln -s "$CURRENT_PATH" "$BH_LINK"
+    sudo ln -s "$CURRENT_PATH" "$BH_LINK" 2>/dev/null || {
+        echo -e "${RED}Could not create symlink. Trying to copy instead...${NC}"
+        sudo cp "$CURRENT_PATH" "$BH_LINK"
+    }
     sudo chmod +x "$BH_LINK"
     echo -e "${GREEN}You can now use 'bh' to run this script.${NC}"
     sleep 2
@@ -93,17 +98,45 @@ menu() {
 }
 
 update_script() {
+update_script() {
     local script_url="https://raw.githubusercontent.com/masihjahangiri/backhaul-easy/main/script.sh"
+    local tmp_script
+    tmp_script="$(mktemp /tmp/bh-update.XXXXXX)"
+
     echo -e "${CYAN}Updating script from GitHub...${NC}"
-    
-    if curl -fsSL "$script_url" -o "$0"; then
-        chmod +x "$0"
-        echo -e "${GREEN}Script updated successfully.${NC}"
-        echo -e "${GREEN}Reloading the updated script...${NC}"
+
+    if curl -fsSL "$script_url" -o "$tmp_script"; then
+        chmod +x "$tmp_script"
+
+        # Check if running from a real file
+        if [[ "$0" == /dev/fd/* || ! -w "$0" ]]; then
+            # Save updated script somewhere usable
+            echo -e "${YELLOW}Detected non-writable or temporary launch (e.g. via <(curl ...)).${NC}"
+
+            # Attempt to update /usr/local/bin/bh if possible
+            if [[ -L /usr/local/bin/bh || -f /usr/local/bin/bh ]]; then
+                sudo cp "$tmp_script" /usr/local/bin/bh && sudo chmod +x /usr/local/bin/bh
+                echo -e "${GREEN}Persistent script updated at /usr/local/bin/bh.${NC}"
+            else
+                cp "$tmp_script" "$HOME/bh"
+                chmod +x "$HOME/bh"
+                echo -e "${GREEN}Updated version saved to: $HOME/bh${NC}"
+            fi
+
+            echo -e "${CYAN}Next time, run it using: ${YELLOW}bh${NC}"
+            sleep 3
+            return
+        fi
+
+        # Safe to overwrite running script
+        sudo mv "$tmp_script" "$0"
+        sudo chmod +x "$0"
+        echo -e "${GREEN}Script updated successfully. Reloading...${NC}"
         sleep 2
         exec "$0"
     else
-        echo -e "${RED}Failed to update the script. Please check your network connection or URL.${NC}"
+        rm -f "$tmp_script"
+        echo -e "${RED}Failed to fetch update. Skipping...${NC}"
         sleep 2
     fi
 }
