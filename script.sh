@@ -140,49 +140,65 @@ EOF
 }
 
 manage_tunnels() {
-    clear
-    mapfile -t TUNNELS < <(systemctl list-units --type=service --all | grep backhaul- | awk '{print $1}')
-    if [[ ${#TUNNELS[@]} -eq 0 ]]; then
-        echo -e "${YELLOW}No Backhaul tunnels found.${NC}"; sleep 2; return
-    fi
+    while true; do
+        clear
+        mapfile -t TUNNELS < <(systemctl list-units --type=service --all | grep backhaul- | awk '{print $1}')
+        if [[ ${#TUNNELS[@]} -eq 0 ]]; then
+            echo -e "${YELLOW}No Backhaul tunnels found.${NC}"; sleep 2; return
+        fi
 
-    echo -e "${CYAN}Select a Backhaul Tunnel:${NC}"
-    for i in "${!TUNNELS[@]}"; do
-        echo -e "${YELLOW}$((i+1)))${NC} ${TUNNELS[$i]}"
-    done
-    read -rp "Enter number: " TUNNUM
+        echo -e "${CYAN}Select a Backhaul Tunnel (or 0 to go back):${NC}"
+        for i in "${!TUNNELS[@]}"; do
+            echo -e "${YELLOW}$((i+1)))${NC} ${TUNNELS[$i]}"
+        done
+        echo -e "${YELLOW}0) Back to Main Menu${NC}"
+        read -rp "Enter number: " TUNNUM
 
-    if ! [[ "$TUNNUM" =~ ^[0-9]+$ ]] || (( TUNNUM < 1 || TUNNUM > ${#TUNNELS[@]} )); then
-        echo -e "${RED}Invalid selection.${NC}"; sleep 2; return
-    fi
-
-    TUNNEL="${TUNNELS[$((TUNNUM-1))]}"
-    clear
-    echo -e "${CYAN}Tunnel: $TUNNEL${NC}"
-    systemctl status "$TUNNEL" --no-pager | grep -E 'Loaded|Active|ExecStart'
-
-    echo -e "\n${YELLOW}1) View Logs${NC}\n${YELLOW}2) Stop & Remove Tunnel${NC}\n${YELLOW}3) Back${NC}"
-    read -rp "Choose an action: " action
-
-    case $action in
-        1)
-            journalctl -u "$TUNNEL" --no-pager | less
-            ;;
-        2)
-            systemctl stop "$TUNNEL"
-            systemctl disable "$TUNNEL"
-            rm -f "/etc/systemd/system/$TUNNEL"
-            rm -f "/root/${TUNNEL#backhaul-}.toml"
-            echo -e "${GREEN}Tunnel $TUNNEL removed.${NC}"; sleep 2
-            ;;
-        3)
+        if [[ "$TUNNUM" == "0" ]]; then
             return
-            ;;
-        *)
-            echo -e "${RED}Invalid option.${NC}"; sleep 2
-            ;;
-    esac
-    manage_tunnels
+        elif ! [[ "$TUNNUM" =~ ^[0-9]+$ ]] || (( TUNNUM < 1 || TUNNUM > ${#TUNNELS[@]} )); then
+            echo -e "${RED}Invalid selection.${NC}"; sleep 2; continue
+        fi
+
+        TUNNEL="${TUNNELS[$((TUNNUM-1))]}"
+        while true; do
+            clear
+            echo -e "${CYAN}Tunnel: $TUNNEL${NC}"
+            echo -e "${GREEN}Systemctl Status:${NC}"
+            systemctl status "$TUNNEL" --no-pager | grep -E 'Loaded|Active|ExecStart'
+
+            echo -e "\n${YELLOW}1) View Logs (last 50 lines)${NC}"
+            echo -e "${YELLOW}2) View Full Logs${NC}"
+            echo -e "${YELLOW}3) Stop & Remove Tunnel${NC}"
+            echo -e "${YELLOW}4) Back${NC}"
+            read -rp "Choose an action: " action
+
+            case $action in
+                1)
+                    journalctl -u "$TUNNEL" -n 50 --no-pager
+                    read -rp "Press Enter to continue..."
+                    ;;
+                2)
+                    journalctl -u "$TUNNEL" --no-pager | less
+                    ;;
+                3)
+                    systemctl stop "$TUNNEL"
+                    systemctl disable "$TUNNEL"
+                    rm -f "/etc/systemd/system/$TUNNEL"
+                    rm -f "/root/${TUNNEL#backhaul-}.toml"
+                    echo -e "${GREEN}Tunnel $TUNNEL removed.${NC}"
+                    sleep 2
+                    break
+                    ;;
+                4)
+                    break
+                    ;;
+                *)
+                    echo -e "${RED}Invalid option.${NC}"; sleep 2
+                    ;;
+            esac
+        done
+    done
 }
 
 menu
