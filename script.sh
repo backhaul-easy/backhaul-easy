@@ -27,30 +27,65 @@ ${NC}"
 
 # Install short command alias "bh"
 BH_LINK="/usr/local/bin/bh"
-CURRENT_PATH="$(realpath "$0")"
+if [[ -f "$0" && ! "$0" =~ ^/dev/fd/ ]]; then
+    CURRENT_PATH="$(realpath "$0")"
+    
+    # Check if we have write permissions
+    if [[ ! -w /usr/local/bin ]]; then
+        echo -e "${YELLOW}No write permissions in /usr/local/bin. Checking alternatives...${NC}"
+        if [[ -w "$HOME/.local/bin" ]]; then
+            BH_LINK="$HOME/.local/bin/bh"
+            mkdir -p "$HOME/.local/bin"
+            echo -e "${CYAN}Using $HOME/.local/bin instead${NC}"
+        else
+            echo -e "${RED}No suitable directory found with write permissions.${NC}"
+            echo -e "${YELLOW}Please run with sudo or create a writable directory.${NC}"
+            sleep 2
+        fi
+    fi
 
-# Handle broken symlink
-if [[ -L "$BH_LINK" && ! -e "$BH_LINK" ]]; then
-    echo -e "${YELLOW}Fixing broken symlink: bh${NC}"
-    sudo rm "$BH_LINK"
-fi
+    # Handle broken symlink
+    if [[ -L "$BH_LINK" && ! -e "$BH_LINK" ]]; then
+        echo -e "${YELLOW}Found broken symlink at $BH_LINK${NC}"
+        if sudo rm -f "$BH_LINK"; then
+            echo -e "${GREEN}Removed broken symlink${NC}"
+        else
+            echo -e "${RED}Failed to remove broken symlink${NC}"
+            sleep 2
+        fi
+    fi
 
-# Create or update symlink
-if [[ ! -e "$BH_LINK" ]]; then
-    echo -e "${YELLOW}Installing short command: bh${NC}"
-    sudo ln -s "$CURRENT_PATH" "$BH_LINK" 2>/dev/null || {
-        echo -e "${RED}Could not create symlink. Trying to copy instead...${NC}"
-        sudo cp "$CURRENT_PATH" "$BH_LINK"
-    }
-    sudo chmod +x "$BH_LINK"
-    echo -e "${GREEN}You can now use 'bh' to run this script.${NC}"
-    sleep 2
-elif [[ -L "$BH_LINK" && "$(realpath "$BH_LINK")" != "$CURRENT_PATH" ]]; then
-    echo -e "${YELLOW}Updating existing bh symlink to point to this script.${NC}"
-    sudo ln -sf "$CURRENT_PATH" "$BH_LINK"
-    echo -e "${GREEN}Symlink updated.${NC}"
+    # Create or update symlink
+    if [[ ! -e "$BH_LINK" ]]; then
+        echo -e "${CYAN}Installing 'bh' command...${NC}"
+        if sudo ln -s "$CURRENT_PATH" "$BH_LINK" 2>/dev/null; then
+            sudo chmod +x "$BH_LINK"
+            echo -e "${GREEN}Successfully installed 'bh' command at $BH_LINK${NC}"
+            echo -e "${CYAN}You can now use 'bh' to run this script from anywhere${NC}"
+        else
+            echo -e "${YELLOW}Failed to create symlink. Trying to copy instead...${NC}"
+            if sudo cp "$CURRENT_PATH" "$BH_LINK"; then
+                sudo chmod +x "$BH_LINK"
+                echo -e "${GREEN}Successfully copied script to $BH_LINK${NC}"
+            else
+                echo -e "${RED}Failed to install 'bh' command${NC}"
+                echo -e "${YELLOW}You can still run the script directly from its current location${NC}"
+            fi
+        fi
+        sleep 2
+    elif [[ -L "$BH_LINK" && "$(realpath "$BH_LINK")" != "$CURRENT_PATH" ]]; then
+        echo -e "${YELLOW}Updating existing 'bh' command...${NC}"
+        if sudo ln -sf "$CURRENT_PATH" "$BH_LINK"; then
+            echo -e "${GREEN}Successfully updated 'bh' command${NC}"
+        else
+            echo -e "${RED}Failed to update 'bh' command${NC}"
+        fi
+        sleep 2
+    else
+        echo -e "${CYAN}'bh' command is already correctly configured${NC}"
+    fi
 else
-    echo -e "${CYAN}Shortcut 'bh' already correctly configured.${NC}"
+    echo -e "${YELLOW}Running from a temporary source; skipping alias install${NC}"
 fi
 
 SCRIPT_DIR="$HOME/backhaul-easy"
@@ -101,42 +136,75 @@ update_script() {
     local script_url="https://raw.githubusercontent.com/masihjahangiri/backhaul-easy/main/script.sh"
     local tmp_script
     tmp_script="$(mktemp /tmp/bh-update.XXXXXX)"
+    local backup_script="$HOME/.backhaul-easy/script.sh.bak"
 
-    echo -e "${CYAN}Updating script from GitHub...${NC}"
+    echo -e "${CYAN}Checking for updates...${NC}"
 
-    if curl -fsSL "$script_url" -o "$tmp_script"; then
-        chmod +x "$tmp_script"
+    # Create backup directory
+    mkdir -p "$HOME/.backhaul-easy"
 
-        # Check if running from a real file
-        if [[ "$0" == /dev/fd/* || ! -w "$0" ]]; then
-            # Save updated script somewhere usable
-            echo -e "${YELLOW}Detected non-writable or temporary launch (e.g. via <(curl ...)).${NC}"
+    # Download new version
+    if ! curl -fsSL "$script_url" -o "$tmp_script"; then
+        rm -f "$tmp_script"
+        echo -e "${RED}Failed to download update. Check your internet connection.${NC}"
+        sleep 2
+        return 1
+    fi
 
-            # Attempt to update /usr/local/bin/bh if possible
-            if [[ -L /usr/local/bin/bh || -f /usr/local/bin/bh ]]; then
-                sudo cp "$tmp_script" /usr/local/bin/bh && sudo chmod +x /usr/local/bin/bh
-                echo -e "${GREEN}Persistent script updated at /usr/local/bin/bh.${NC}"
-            else
-                cp "$tmp_script" "$HOME/bh"
-                chmod +x "$HOME/bh"
-                echo -e "${GREEN}Updated version saved to: $HOME/bh${NC}"
+    # Verify the downloaded script
+    if ! bash -n "$tmp_script"; then
+        rm -f "$tmp_script"
+        echo -e "${RED}Downloaded script contains syntax errors. Update aborted.${NC}"
+        sleep 2
+        return 1
+    fi
+
+    chmod +x "$tmp_script"
+
+    # Create backup of current script
+    if [[ -f "$0" ]]; then
+        cp "$0" "$backup_script"
+        echo -e "${YELLOW}Created backup at $backup_script${NC}"
+    fi
+
+    # Determine where to save the update
+    if [[ "$0" == /dev/fd/* || ! -w "$0" ]]; then
+        if [[ -e /usr/local/bin/bh && -w /usr/local/bin/bh ]]; then
+            if sudo cp "$tmp_script" /usr/local/bin/bh; then
+                sudo chmod +x /usr/local/bin/bh
+                echo -e "${GREEN}Update saved to /usr/local/bin/bh${NC}"
+                echo -e "${CYAN}Next time, use ${YELLOW}bh${CYAN} to run the updated script${NC}"
+                sleep 2
+                return 0
             fi
-
-            echo -e "${CYAN}Next time, run it using: ${YELLOW}bh${NC}"
-            sleep 3
-            return
         fi
 
-        # Safe to overwrite running script
-        sudo mv "$tmp_script" "$0"
+        # Try user's home directory as fallback
+        local home_script="$HOME/bh"
+        if cp "$tmp_script" "$home_script"; then
+            chmod +x "$home_script"
+            echo -e "${GREEN}Update saved to: $home_script${NC}"
+            echo -e "${CYAN}Next time, use ${YELLOW}$home_script${CYAN} to run the updated script${NC}"
+            sleep 2
+            return 0
+        fi
+
+        echo -e "${RED}Failed to save update to any location${NC}"
+        rm -f "$tmp_script"
+        return 1
+    fi
+
+    # Update current script
+    if sudo mv "$tmp_script" "$0"; then
         sudo chmod +x "$0"
         echo -e "${GREEN}Script updated successfully. Reloading...${NC}"
         sleep 2
         exec "$0"
     else
         rm -f "$tmp_script"
-        echo -e "${RED}Failed to fetch update. Skipping...${NC}"
+        echo -e "${RED}Failed to update script. Check permissions.${NC}"
         sleep 2
+        return 1
     fi
 }
 
