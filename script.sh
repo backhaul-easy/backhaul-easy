@@ -25,6 +25,19 @@ ${NC}"
 
 [[ $EUID -ne 0 ]] && { echo -e "${RED}This script must be run as root${NC}"; exit 1; }
 
+# Install short command alias "bh"
+if [[ ! -f /usr/local/bin/bh ]]; then
+    echo -e "${YELLOW}Installing short command: bh${NC}"
+    ln -s "$(realpath "$0")" /usr/local/bin/bh
+    chmod +x /usr/local/bin/bh
+    echo -e "${GREEN}You can now use 'bh' to run this script.${NC}"
+    sleep 2
+fi
+
+SCRIPT_DIR="$HOME/backhaul-easy"
+CONFIG_DIR="$SCRIPT_DIR/configs"
+mkdir -p "$CONFIG_DIR"
+
 menu() {
     clear
     echo -e "$LOGO"
@@ -32,6 +45,7 @@ menu() {
     echo -e "${YELLOW}1) System & Network Optimizations${NC}"
     echo -e "${YELLOW}2) Install Backhaul and Setup Tunnel${NC}"
     echo -e "${YELLOW}3) Manage Backhaul Tunnels${NC}"
+    echo -e "${YELLOW}4) Update Script from GitHub${NC}"
     echo -e "${YELLOW}0) Exit${NC}"
     read -rp "Enter your choice: " choice
 
@@ -47,6 +61,12 @@ menu() {
             ;;
         3)
             manage_tunnels
+            ;;
+        4)
+            curl -fsSL https://raw.githubusercontent.com/masihjahangiri/backhaul-easy/main/script.sh -o "$0"
+            chmod +x "$0"
+            echo -e "${GREEN}Script updated. Please restart to apply changes.${NC}"
+            exit 0
             ;;
         0)
             clear; exit 0
@@ -89,7 +109,7 @@ setup_backhaul() {
     [[ "$ARCH" == "unsupported" ]] && { echo -e "${RED}Unsupported architecture.${NC}"; sleep 2; return; }
 
     wget -q https://github.com/Musixal/Backhaul/releases/download/v0.6.5/backhaul_linux_${ARCH}.tar.gz
-    tar -xzf backhaul_linux_${ARCH}.tar.gz && rm backhaul_linux_${ARCH}.tar.gz LICENSE README.md
+    tar -xzf backhaul_linux_${ARCH}.tar.gz -C "$SCRIPT_DIR" && rm backhaul_linux_${ARCH}.tar.gz LICENSE README.md
 
     echo -e "${CYAN}Choose setup type:${NC}\n${YELLOW}1) Iran Server${NC}\n${YELLOW}2) Kharej Server${NC}"
     read -rp "Select option [1/2]: " TYPE
@@ -99,44 +119,40 @@ setup_backhaul() {
     read -rp "Enter Tunnel Port: " TUNNEL_PORT
     read -rp "Enter Token: " TOKEN
 
+    CONFIG="$CONFIG_DIR/${TYPE}_${TUNNEL_PORT}.toml"
+    SERVICE="backhaul-${TYPE}_${TUNNEL_PORT}"
+
     if [[ "$TYPE" == "1" ]]; then
         read -rp "Port Forwarding (comma-separated): " PORTS
         PORT_ARRAY=$(echo "$PORTS" | sed 's/,/","/g')
-        CONFIG="iran${TUNNEL_PORT}.toml"
-        cat > $CONFIG <<EOF
+        cat > "$CONFIG" <<EOF
 [server]
 bind_addr="0.0.0.0:${TUNNEL_PORT}"
 transport="tcp"
 token="${TOKEN}"
 ports=["${PORT_ARRAY}"]
 EOF
-        SERVICE="backhaul-iran${TUNNEL_PORT}"
     else
         read -rp "Enter Iran Server IP: " IRAN_IP
-        CONFIG="kharej${TUNNEL_PORT}.toml"
-        cat > $CONFIG <<EOF
+        cat > "$CONFIG" <<EOF
 [client]
 remote_addr="${IRAN_IP}:${TUNNEL_PORT}"
 token="${TOKEN}"
 EOF
-        SERVICE="backhaul-kharej${TUNNEL_PORT}"
     fi
 
     cat > /etc/systemd/system/${SERVICE}.service <<EOF
 [Unit]
 Description=Backhaul Tunnel
 After=network.target
-
 [Service]
-ExecStart=/root/backhaul -c /root/$CONFIG
+ExecStart=$SCRIPT_DIR/backhaul -c $CONFIG
 Restart=always
 RestartSec=3
-
 [Install]
 WantedBy=multi-user.target
 EOF
     systemctl enable --now ${SERVICE}.service &>/dev/null
-    clear
 }
 
 manage_tunnels() {
@@ -144,7 +160,9 @@ manage_tunnels() {
         clear
         mapfile -t TUNNELS < <(systemctl list-units --type=service --all | grep backhaul- | awk '{print $1}')
         if [[ ${#TUNNELS[@]} -eq 0 ]]; then
-            echo -e "${YELLOW}No Backhaul tunnels found.${NC}"; sleep 2; return
+            echo -e "${YELLOW}No Backhaul tunnels found.${NC}"
+            sleep 2
+            return
         fi
 
         echo -e "${CYAN}Select a Backhaul Tunnel (or 0 to go back):${NC}"
@@ -157,11 +175,14 @@ manage_tunnels() {
         if [[ "$TUNNUM" == "0" ]]; then
             return
         elif ! [[ "$TUNNUM" =~ ^[0-9]+$ ]] || (( TUNNUM < 1 || TUNNUM > ${#TUNNELS[@]} )); then
-            echo -e "${RED}Invalid selection.${NC}"; sleep 2; continue
+            echo -e "${RED}Invalid selection.${NC}"
+            sleep 2
+            continue
         fi
 
         TUNNEL="${TUNNELS[$((TUNNUM-1))]}"
-        CONFIG_FILE="/root/${TUNNEL#backhaul-}.toml"
+        CONFIG_FILE="$CONFIG_DIR/${TUNNEL#backhaul-}.toml"
+
         while true; do
             clear
             echo -e "${CYAN}Tunnel: $TUNNEL${NC}"
@@ -177,6 +198,7 @@ manage_tunnels() {
             echo -e "${YELLOW}2) View Full Logs${NC}"
             echo -e "${YELLOW}3) Stop & Disable Tunnel${NC}"
             echo -e "${YELLOW}4) Restart / Enable & Start${NC}"
+            echo -e "${YELLOW}5) Edit Tunnel Config${NC}"
             echo -e "${YELLOW}0) Back${NC}"
             read -rp "Choose an action: " action
 
@@ -200,15 +222,20 @@ manage_tunnels() {
                     echo -e "${GREEN}Tunnel $TUNNEL restarted and enabled.${NC}"
                     sleep 2
                     ;;
+                5)
+                    nano "$CONFIG_FILE"
+                    ;;
                 0)
                     break
                     ;;
                 *)
-                    echo -e "${RED}Invalid option.${NC}"; sleep 2
+                    echo -e "${RED}Invalid option.${NC}"
+                    sleep 2
                     ;;
             esac
         done
     done
 }
+
 
 menu
