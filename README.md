@@ -1,46 +1,119 @@
+<pre>
+██████╗  █████╗  ██████╗██╗  ██╗██╗  ██╗ █████╗ ██╗   ██╗██╗     
+██╔══██╗██╔══██╗██╔════╝██║ ██╔╝██║  ██║██╔══██╗██║   ██║██║     
+██████╔╝███████║██║     █████╔╝ ███████║███████║██║   ██║██║     
+██╔══██╗██╔══██║██║     ██╔═██╗ ██╔══██║██╔══██║██║   ██║██║     
+██████╔╝██║  ██║╚██████╗██║  ██╗██║  ██║██║  ██║╚██████╔╝███████╗
+╚═════╝ ╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝
+███████╗ █████╗ ███████╗██╗   ██╗
+██╔════╝██╔══██╗██╔════╝╚██╗ ██╔╝
+█████╗  ███████║███████╗ ╚████╔╝ 
+██╔══╝  ██╔══██║╚════██║  ╚██╔╝  
+███████╗██║  ██║███████║   ██║   
+╚══════╝╚═╝  ╚═╝╚══════╝   ╚═╝   
+</pre>
+
 # Backhaul Easy
 
-A powerful and user-friendly interactive menu script for managing backhaul configurations.
+🚀 A powerful and user-friendly CLI tool for managing backhaul configurations with ease.
 
-## Description
+## 🌟 Features
 
-Backhaul Easy is a command-line tool that simplifies the process of configuring and managing backhaul connections. It provides an intuitive interactive menu interface for users to perform various backhaul-related operations.
+- 📱 Interactive menu-driven interface
+- 🔧 System & Network optimizations
+- 🔄 Automatic tunnel management
+- 🛠️ Easy configuration for both Iran and Kharej servers
+- 🔄 One-command installation and updates
+- 💻 Cross-platform support (amd64/arm64)
 
-## Features
+## 🚀 Quick Start
 
-- Interactive menu-driven interface
-- Easy-to-use command-line tool
-- One-line installation
-- Streamlined backhaul configuration process
-
-## Installation
-
-You can install Backhaul Easy using the following command:
+### One-Line Installation
 
 ```bash
 bash <(curl -Ls https://raw.githubusercontent.com/masihjahangiri/backhaul-easy/main/script.sh)
 ```
 
-## Usage
-
-After installation, you can run the script using:
+After installation, you can run the tool using:
 
 ```bash
-./script.sh
+bh
 ```
 
-Follow the interactive menu prompts to configure your backhaul settings.
+## 🛠️ Main Features
 
-## Requirements
+1. **System & Network Optimizations**
+   - Automatic sysctl optimizations
+   - System limits configuration
+   - Network performance tuning
 
-- Bash shell
-- Internet connection for installation
-- Appropriate permissions to execute scripts
+2. **Backhaul Installation & Setup**
+   - Easy tunnel configuration
+   - Support for both Iran and Kharej servers
+   - Automatic service management
 
-## Contributing
+3. **Tunnel Management**
+   - Start/Stop tunnels
+   - View logs and status
+   - Edit configurations
+   - Remove tunnels
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+4. **Auto-Updates**
+   - One-click script updates
+   - Automatic version checking
 
-## License
+## 🔧 System Requirements
+
+- Linux-based operating system
+- Root access
+- Active internet connection
+- Supported architectures: amd64, arm64
+
+## 📝 Configuration
+
+The tool provides an interactive menu for all configurations. You'll need:
+
+- Port numbers for tunnels
+- Token for authentication
+- Server IP addresses (for Kharej setup)
+- Port forwarding rules (for Iran setup)
+
+## 🔍 Troubleshooting
+
+1. Check tunnel status:
+   ```bash
+   bh
+   # Select option 3 (Manage Backhaul Tunnels)
+   ```
+
+2. View logs:
+   - Select a tunnel from the management menu
+   - Choose option 1 or 2 to view logs
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit issues and pull requests.
+
+1. Fork the repository
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a new Pull Request
+
+## 📜 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+## ⭐ Support
+
+If you find this tool helpful, please consider giving it a star on GitHub!
+
+## 🔐 Security
+
+- Always use strong tokens for tunnel authentication
+- Keep your system and the script up to date
+- Monitor logs regularly for any suspicious activity
+
+---
+
+Made with ❤️ by [Masih Jahangiri](https://github.com/masihjahangiri)
