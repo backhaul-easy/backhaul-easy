@@ -209,7 +209,9 @@ EOF
 manage_tunnels() {
     while true; do
         clear
-        mapfile -t TUNNELS < <(systemctl list-units --type=service --all | grep backhaul- | awk '{print $1}')
+        # Get only active tunnels and filter out any empty lines
+        mapfile -t TUNNELS < <(systemctl list-units --type=service --all --no-legend | grep backhaul- | awk '{print $1}' | grep -v '^$')
+        
         if [[ ${#TUNNELS[@]} -eq 0 ]]; then
             echo -e "${YELLOW}No Backhaul tunnels found.${NC}"
             sleep 2
