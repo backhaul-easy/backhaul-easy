@@ -250,6 +250,7 @@ manage_tunnels() {
             echo -e "${YELLOW}3) Stop & Disable Tunnel${NC}"
             echo -e "${YELLOW}4) Restart / Enable & Start${NC}"
             echo -e "${YELLOW}5) Edit Tunnel Config${NC}"
+            echo -e "${YELLOW}6) Remove Full Tunnel${NC}"
             echo -e "${YELLOW}0) Back${NC}"
             read -rp "Choose an action: " action
 
@@ -275,6 +276,25 @@ manage_tunnels() {
                     ;;
                 5)
                     nano "$CONFIG_FILE"
+                    ;;
+                6)
+                    echo -e "${YELLOW}Removing tunnel $TUNNEL...${NC}"
+                    # Stop and disable the service first
+                    systemctl stop "$TUNNEL"
+                    systemctl disable "$TUNNEL"
+                    
+                    # Remove service file
+                    rm -f "/etc/systemd/system/${TUNNEL}.service"
+                    
+                    # Remove config file
+                    rm -f "$CONFIG_FILE"
+                    
+                    # Reload systemd to reflect changes
+                    systemctl daemon-reload
+                    
+                    echo -e "${GREEN}Tunnel $TUNNEL has been completely removed.${NC}"
+                    sleep 2
+                    break  # Exit the tunnel management menu after removal
                     ;;
                 0)
                     break
