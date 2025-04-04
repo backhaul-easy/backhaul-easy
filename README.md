@@ -46,6 +46,10 @@ Backhaul provides a robust solution with:
 
 Backhaul is inspired by [Rathole](https://github.com/rapiz1/rathole) and takes it a step further with enhanced features and performance optimizations.
 
+## 🙏 Acknowledgments
+
+This project is built on top of the amazing [Backhaul](https://github.com/Musixal/Backhaul) project by [Musixal](https://github.com/Musixal). We are deeply grateful for their work in creating this high-performance reverse tunneling solution. This CLI tool aims to make Backhaul more accessible and easier to use while maintaining all its powerful features.
+
 ## 🌟 Features
 
 - 📱 Interactive menu-driven interface
@@ -126,18 +130,6 @@ The tool provides an interactive menu for all configurations. You'll need:
    - Acts as the client endpoint for the tunnel
    - Connects to the Restricted Server
    - Typically has public IP access
-
-## �� Troubleshooting
-
-1. Check tunnel status:
-   ```bash
-   bh
-   # Select option 3 (Manage Backhaul Tunnels)
-   ```
-
-2. View logs:
-   - Select a tunnel from the management menu
-   - Choose option 1 or 2 to view logs
 
 ## 🤝 Contributing
 
