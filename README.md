@@ -52,9 +52,7 @@ bh
 
 When you run the tool, you'll be greeted with this interactive menu:
 
-<div align="center">
-  <img src="./img/backhal-easy-cli-menu-preview.webp" alt="Backhaul Easy CLI Menu Preview" width="800">
-</div>
+<img src="./img/backhal-easy-cli-menu-preview.webp" alt="Backhaul Easy CLI Menu Preview" width="800">
 
 ## 🛠️ Main Features
 
