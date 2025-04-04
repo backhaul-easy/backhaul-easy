@@ -213,7 +213,7 @@ manage_tunnels() {
     while true; do
         clear
         # Get all backhaul tunnels regardless of their state
-        TUNNELS=($(systemctl list-units --type=service --all --plain | grep backhaul- | awk '{print $1}' | grep -v '^$'))
+        TUNNELS=($(systemctl list-units --type=service --all --plain | grep backhaul- | awk '{print $1}' | sed 's/\.service$//' | grep -v '^$'))
         
         if [[ ${#TUNNELS[@]} -eq 0 ]]; then
             echo -e "${YELLOW}No Backhaul tunnels found.${NC}"
