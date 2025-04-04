@@ -32,7 +32,7 @@ menu() {
     echo -e "${YELLOW}1) System & Network Optimizations${NC}"
     echo -e "${YELLOW}2) Install Backhaul and Setup Tunnel${NC}"
     echo -e "${YELLOW}3) Manage Backhaul Tunnels${NC}"
-    echo -e "${YELLOW}4) Exit${NC}"
+    echo -e "${YELLOW}0) Exit${NC}"
     read -rp "Enter your choice: " choice
 
     case $choice in
@@ -48,7 +48,7 @@ menu() {
         3)
             manage_tunnels
             ;;
-        4)
+        0)
             clear; exit 0
             ;;
         *)
@@ -161,16 +161,23 @@ manage_tunnels() {
         fi
 
         TUNNEL="${TUNNELS[$((TUNNUM-1))]}"
+        CONFIG_FILE="/root/${TUNNEL#backhaul-}.toml"
         while true; do
             clear
             echo -e "${CYAN}Tunnel: $TUNNEL${NC}"
             echo -e "${GREEN}Systemctl Status:${NC}"
             systemctl status "$TUNNEL" --no-pager | grep -E 'Loaded|Active|ExecStart'
 
+            if [[ -f "$CONFIG_FILE" ]]; then
+                echo -e "${CYAN}Tunnel Configuration Summary:${NC}"
+                grep -E 'bind_addr|remote_addr|ports' "$CONFIG_FILE"
+            fi
+
             echo -e "\n${YELLOW}1) View Logs (last 50 lines)${NC}"
             echo -e "${YELLOW}2) View Full Logs${NC}"
-            echo -e "${YELLOW}3) Stop & Remove Tunnel${NC}"
-            echo -e "${YELLOW}4) Back${NC}"
+            echo -e "${YELLOW}3) Stop & Disable Tunnel${NC}"
+            echo -e "${YELLOW}4) Restart / Enable & Start${NC}"
+            echo -e "${YELLOW}0) Back${NC}"
             read -rp "Choose an action: " action
 
             case $action in
@@ -184,13 +191,16 @@ manage_tunnels() {
                 3)
                     systemctl stop "$TUNNEL"
                     systemctl disable "$TUNNEL"
-                    rm -f "/etc/systemd/system/$TUNNEL"
-                    rm -f "/root/${TUNNEL#backhaul-}.toml"
-                    echo -e "${GREEN}Tunnel $TUNNEL removed.${NC}"
+                    echo -e "${YELLOW}Tunnel $TUNNEL stopped and disabled.${NC}"
                     sleep 2
-                    break
                     ;;
                 4)
+                    systemctl enable "$TUNNEL"
+                    systemctl restart "$TUNNEL"
+                    echo -e "${GREEN}Tunnel $TUNNEL restarted and enabled.${NC}"
+                    sleep 2
+                    ;;
+                0)
                     break
                     ;;
                 *)
