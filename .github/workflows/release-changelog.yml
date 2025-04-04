@@ -25,25 +25,31 @@ jobs:
 
       - name: Update CHANGELOG.md
         run: |
-          # Get the tag name
-          TAG_NAME=${GITHUB_REF#refs/tags/}
+          # Get the tag name and date
+          TAG_NAME=${{ github.ref_name }}
           VERSION=${TAG_NAME#v}
           DATE=$(date +%Y-%m-%d)
           
-          # Read existing changelog
-          CHANGELOG=$(cat CHANGELOG.md)
+          # Create temporary files
+          echo "## [${VERSION}] - ${DATE}" > entry.txt
+          echo "" >> entry.txt
+          echo "${{ steps.changelog.outputs.changelog }}" >> entry.txt
+          echo "" >> entry.txt
           
-          # Create new changelog entry
-          NEW_ENTRY="## [${VERSION}] - ${DATE}\n\n${{ steps.changelog.outputs.changelog }}\n"
+          # Add link reference to another file
+          echo "[${VERSION}]: https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG_NAME}" > link.txt
           
-          # Update the link reference at the bottom
-          LINK_REF="[${VERSION}]: https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG_NAME}"
+          # Combine files
+          head -n 5 CHANGELOG.md > changelog_new.md
+          cat entry.txt >> changelog_new.md
+          tail -n +6 CHANGELOG.md >> changelog_new.md
+          cat link.txt >> changelog_new.md
           
-          # Insert new entry after header (after line 5)
-          sed -i "5a\\${NEW_ENTRY}" CHANGELOG.md
+          # Replace the original file
+          mv changelog_new.md CHANGELOG.md
           
-          # Append link reference at the end
-          echo ${LINK_REF} >> CHANGELOG.md
+          # Clean up temporary files
+          rm entry.txt link.txt
           
           # Commit and push changes
           git config --local user.email "action@github.com"
