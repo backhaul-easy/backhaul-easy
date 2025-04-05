@@ -16,7 +16,6 @@
 <div align="center">
   
 # 🚀 Backhaul Easy
-
 A powerful and user-friendly CLI tool for managing backhaul configurations with ease.
 
 [![GitHub license](https://img.shields.io/github/license/masihjahangiri/backhaul-easy)](https://github.com/masihjahangiri/backhaul-easy/blob/main/LICENSE)
