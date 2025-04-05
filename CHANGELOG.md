@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/masihjahangiri/backhaul-easy/compare/v1.2.0...v1.3.0) (2025-04-05)
+
+
+### Features
+
+* add support for Iran in location retrieval ([6509d94](https://github.com/masihjahangiri/backhaul-easy/commit/6509d94b1f9ac037805ad05aa6e24ecd34e1ef2c))
+
 # [1.2.0](https://github.com/masihjahangiri/backhaul-easy/compare/v1.1.0...v1.2.0) (2025-04-05)
 
 
