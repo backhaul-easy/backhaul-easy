@@ -5,31 +5,61 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 CYAN='\033[1;36m'
+GRAY='\033[0;90m'
 MAGENTA='\033[1;35m'
 NC='\033[0m'
 
 LOGO="
-${MAGENTA}██████╗  █████╗  ██████╗██╗  ██╗██╗  ██╗ █████╗ ██╗   ██╗██╗     
-${MAGENTA}██╔══██╗██╔══██╗██╔════╝██║ ██╔╝██║  ██║██╔══██╗██║   ██║██║     
-${MAGENTA}██████╔╝███████║██║     █████╔╝ ███████║███████║██║   ██║██║     
-${MAGENTA}██╔══██╗██╔══██║██║     ██╔═██╗ ██╔══██║██╔══██║██║   ██║██║     
-${MAGENTA}██████╔╝██║  ██║╚██████╗██║  ██╗██║  ██║██║  ██║╚██████╔╝███████╗
-${MAGENTA}╚═════╝ ╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝
-${MAGENTA}███████╗ █████╗ ███████╗██╗   ██╗
-${MAGENTA}██╔════╝██╔══██╗██╔════╝╚██╗ ██╔╝
-${MAGENTA}█████╗  ███████║███████╗ ╚████╔╝ 
-${MAGENTA}██╔══╝  ██╔══██║╚════██║  ╚██╔╝  
-${MAGENTA}███████╗██║  ██║███████║   ██║   
-${MAGENTA}╚══════╝╚═╝  ╚═╝╚══════╝   ╚═╝   
+${MAGENTA} ██████╗  █████╗  ██████╗██╗  ██╗██╗  ██╗ █████╗ ██╗   ██╗██╗     
+${MAGENTA} ██╔══██╗██╔══██╗██╔════╝██║ ██╔╝██║  ██║██╔══██╗██║   ██║██║     
+${MAGENTA} ██████╔╝███████║██║     █████╔╝ ███████║███████║██║   ██║██║     
+${MAGENTA} ██╔══██╗██╔══██║██║     ██╔═██╗ ██╔══██║██╔══██║██║   ██║██║     
+${MAGENTA} ██████╔╝██║  ██║╚██████╗██║  ██╗██║  ██║██║  ██║╚██████╔╝███████╗
+${MAGENTA} ╚═════╝ ╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝
+${MAGENTA} ███████╗ █████╗ ███████╗██╗   ██╗
+${MAGENTA} ██╔════╝██╔══██╗██╔════╝╚██╗ ██╔╝
+${MAGENTA} █████╗  ███████║███████╗ ╚████╔╝ 
+${MAGENTA} ██╔══╝  ██╔══██║╚════██║  ╚██╔╝  
+${MAGENTA} ███████╗██║  ██║███████║   ██║   
+${MAGENTA} ╚══════╝╚═╝  ╚═╝╚══════╝   ╚═╝   
 ${NC}"
 
-get_script_version() {
-    local version
-    version=$(curl -s https://api.github.com/repos/masihjahangiri/backhaul-easy/releases/latest | grep -o '"tag_name": "[^"]*' | cut -d'"' -f4)
-    if [ -z "$version" ]; then
-        version="v1.0.0"  # Fallback version if API call fails
+# Cache file paths
+CACHE_DIR="$HOME/backhaul-easy/.cache"
+IP_INFO_CACHE_FILE="$CACHE_DIR/ip_info.json"
+VERSION_CACHE_FILE="$CACHE_DIR/version.txt"
+CACHE_EXPIRY=3600  # Cache expiry time in seconds (1 hour)
+
+# Detect OS and set appropriate stat command
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    STAT_CMD="stat -f %m"
+else
+    STAT_CMD="stat -c %Y"
+fi
+
+# Ensure cache directory exists
+mkdir -p "$CACHE_DIR"
+
+# Function to check if cache is expired
+is_cache_expired() {
+    local cache_file="$1"
+    if [ ! -f "$cache_file" ]; then
+        return 0  # Cache file doesn't exist
     fi
-    echo "$version"
+    local cache_age=$(($(date +%s) - $($STAT_CMD "$cache_file")))
+    [ "$cache_age" -gt "$CACHE_EXPIRY" ]
+}
+
+get_script_version() {
+    if is_cache_expired "$VERSION_CACHE_FILE"; then
+        local version
+        version=$(curl -s https://api.github.com/repos/masihjahangiri/backhaul-easy/releases/latest | grep -o '"tag_name": "[^"]*' | cut -d'"' -f4)
+        if [ -z "$version" ]; then
+            version="v1.0.0"  # Fallback version if API call fails
+        fi
+        echo "$version" > "$VERSION_CACHE_FILE"
+    fi
+    cat "$VERSION_CACHE_FILE"
 }
 
 SCRIPT_VERSION=$(get_script_version)
@@ -52,21 +82,70 @@ fi
 SCRIPT_DIR="$HOME/backhaul-easy"
 
 get_ip_info() {
-    local ip_info
-    ip_info=$(curl -s https://ipinfo.io/json)
-    echo "$ip_info"
+    if is_cache_expired "$IP_INFO_CACHE_FILE"; then
+        curl -s https://ipinfo.io/json > "$IP_INFO_CACHE_FILE"
+    fi
+    cat "$IP_INFO_CACHE_FILE"
 }
 
 get_location() {
     local ip_info
     ip_info=$(get_ip_info)
-    echo "$ip_info" | grep -o '"country": "[^"]*' | cut -d'"' -f4
+    local country_code=$(echo "$ip_info" | grep -o '"country": "[^"]*' | cut -d'"' -f4)
+    
+    # Convert country code to full name
+    case "$country_code" in
+        "DE") echo "Germany" ;;
+        "US") echo "United States" ;;
+        "GB") echo "United Kingdom" ;;
+        "FR") echo "France" ;;
+        "NL") echo "Netherlands" ;;
+        "SG") echo "Singapore" ;;
+        "JP") echo "Japan" ;;
+        "CA") echo "Canada" ;;
+        "AU") echo "Australia" ;;
+        "BR") echo "Brazil" ;;
+        "IN") echo "India" ;;
+        "RU") echo "Russia" ;;
+        "CN") echo "China" ;;
+        "KR") echo "South Korea" ;;
+        "IT") echo "Italy" ;;
+        "ES") echo "Spain" ;;
+        "SE") echo "Sweden" ;;
+        "CH") echo "Switzerland" ;;
+        "NO") echo "Norway" ;;
+        "DK") echo "Denmark" ;;
+        "FI") echo "Finland" ;;
+        "PL") echo "Poland" ;;
+        "AT") echo "Austria" ;;
+        "BE") echo "Belgium" ;;
+        "PT") echo "Portugal" ;;
+        "IE") echo "Ireland" ;;
+        "CZ") echo "Czech Republic" ;;
+        "HU") echo "Hungary" ;;
+        "RO") echo "Romania" ;;
+        "GR") echo "Greece" ;;
+        "BG") echo "Bulgaria" ;;
+        "HR") echo "Croatia" ;;
+        "SK") echo "Slovakia" ;;
+        "SI") echo "Slovenia" ;;
+        "EE") echo "Estonia" ;;
+        "LV") echo "Latvia" ;;
+        "LT") echo "Lithuania" ;;
+        "CY") echo "Cyprus" ;;
+        "LU") echo "Luxembourg" ;;
+        "MT") echo "Malta" ;;
+        "IS") echo "Iceland" ;;
+        *) echo "$country_code" ;;
+    esac
 }
 
 get_datacenter() {
     local ip_info
     ip_info=$(get_ip_info)
-    echo "$ip_info" | grep -o '"org": "[^"]*' | cut -d'"' -f4
+    local org=$(echo "$ip_info" | grep -o '"org": "[^"]*' | cut -d'"' -f4)
+    # Remove AS number if present
+    echo "$org" | sed 's/^AS[0-9]* //'
 }
 
 get_ip() {
@@ -79,17 +158,21 @@ menu() {
     while true; do
         clear
         echo -e "$LOGO"
-        echo -e "${CYAN}Backhaul Easy ${SCRIPT_VERSION}${NC}"
-        echo -e "${YELLOW}IP Address:${NC} $(get_ip)"
-        echo -e "${YELLOW}Location:${NC} $(get_location)"
-        echo -e "${YELLOW}Datacenter:${NC} $(get_datacenter)"
-        echo -e "\n${CYAN}Select an option:${NC}"
-        echo -e "${YELLOW}1) System & Network Optimizations${NC}"
-        echo -e "${YELLOW}2) Install Backhaul and Setup Tunnel${NC}"
-        echo -e "${YELLOW}3) Manage Backhaul Tunnels${NC}"
-        echo -e "${YELLOW}4) Update Script from GitHub${NC}"
-        echo -e "${YELLOW}0) Exit${NC}"
-        read -rp "Enter your choice: " choice
+        echo -e "${CYAN} ═════════════════════════════════════════════════════════════════${NC}"
+        echo -e "${CYAN}                     ${MAGENTA}System Information${CYAN}                     ${NC}"
+        echo -e "${CYAN} ═════════════════════════════════════════════════════════════════${NC}"
+        echo -e "${CYAN} ${GRAY}Script Version:${NC} ${GREEN}$(get_script_version)${CYAN}${NC}"
+        echo -e "${CYAN} ${GRAY}IP Address:${NC}     ${GREEN}$(get_ip)${CYAN}${NC}"
+        echo -e "${CYAN} ${GRAY}Location:${NC}       ${GREEN}$(get_location)${CYAN}${NC}"
+        echo -e "${CYAN} ${GRAY}Datacenter:${NC}     ${GREEN}$(get_datacenter)${CYAN}${NC}"
+        echo -e "${CYAN} ═════════════════════════════════════════════════════════════════${NC}"
+        echo -e "\n${CYAN} Select an option:${NC}"
+        echo -e " 1) System & Network Optimizations${NC}"
+        echo -e " 2) Install Backhaul and Setup Tunnel${NC}"
+        echo -e " 3) Manage Backhaul Tunnels${NC}"
+        echo -e " 4) Update Script from GitHub${NC}"
+        echo -e " 0) Exit${YELLOW}\n"
+        read -rp " Enter your choice: " choice
 
         case $choice in
             1)
@@ -125,6 +208,9 @@ update_script() {
     tmp_script="$(mktemp /tmp/bh-update.XXXXXX)"
 
     echo -e "${CYAN}Checking for updates...${NC}"
+
+    # Clear version cache before update
+    rm -f "$VERSION_CACHE_FILE"
 
     # Download new version
     if ! curl -fsSL "$script_url" -o "$tmp_script"; then
@@ -199,8 +285,8 @@ setup_backhaul() {
     tar -xzf "$SCRIPT_DIR/backhaul_linux_${ARCH}.tar.gz" -C "$SCRIPT_DIR" && cd "$SCRIPT_DIR" && rm backhaul_linux_${ARCH}.tar.gz LICENSE README.md
 
     echo -e "${CYAN}Select your server type:${NC}"
-    echo -e "${YELLOW}1) Restricted Server${NC} - Inside restricted network (behind NAT/firewall)"
-    echo -e "${YELLOW}2) Public Server${NC} - Outside restricted network (public access)"
+    echo -e "${YELLOW}1) Restricted Server${GRAY} - Inside restricted network (behind NAT/firewall)"
+    echo -e "${YELLOW}2) Public Server${GRAY} - Outside restricted network (public access)"
     echo -e "${YELLOW}0) Back to Main Menu${NC}"
     read -rp "Enter your choice [0-2]: " TYPE
 
