@@ -23,6 +23,17 @@ ${MAGENTA}███████╗██║  ██║███████║  
 ${MAGENTA}╚══════╝╚═╝  ╚═╝╚══════╝   ╚═╝   
 ${NC}"
 
+get_script_version() {
+    local version
+    version=$(curl -s https://api.github.com/repos/masihjahangiri/backhaul-easy/releases/latest | grep -o '"tag_name": "[^"]*' | cut -d'"' -f4)
+    if [ -z "$version" ]; then
+        version="v1.0.0"  # Fallback version if API call fails
+    fi
+    echo "$version"
+}
+
+SCRIPT_VERSION=$(get_script_version)
+
 [[ $EUID -ne 0 ]] && { echo -e "${RED}This script must be run as root${NC}"; exit 1; }
 
 # Simple command alias installation
@@ -40,11 +51,39 @@ fi
 
 SCRIPT_DIR="$HOME/backhaul-easy"
 
+get_ip_info() {
+    local ip_info
+    ip_info=$(curl -s https://ipinfo.io/json)
+    echo "$ip_info"
+}
+
+get_location() {
+    local ip_info
+    ip_info=$(get_ip_info)
+    echo "$ip_info" | grep -o '"country": "[^"]*' | cut -d'"' -f4
+}
+
+get_datacenter() {
+    local ip_info
+    ip_info=$(get_ip_info)
+    echo "$ip_info" | grep -o '"org": "[^"]*' | cut -d'"' -f4
+}
+
+get_ip() {
+    local ip_info
+    ip_info=$(get_ip_info)
+    echo "$ip_info" | grep -o '"ip": "[^"]*' | cut -d'"' -f4
+}
+
 menu() {
     while true; do
         clear
         echo -e "$LOGO"
-        echo -e "${CYAN}Select an option:${NC}"
+        echo -e "${CYAN}Backhaul Easy ${SCRIPT_VERSION}${NC}"
+        echo -e "${YELLOW}IP Address:${NC} $(get_ip)"
+        echo -e "${YELLOW}Location:${NC} $(get_location)"
+        echo -e "${YELLOW}Datacenter:${NC} $(get_datacenter)"
+        echo -e "\n${CYAN}Select an option:${NC}"
         echo -e "${YELLOW}1) System & Network Optimizations${NC}"
         echo -e "${YELLOW}2) Install Backhaul and Setup Tunnel${NC}"
         echo -e "${YELLOW}3) Manage Backhaul Tunnels${NC}"
