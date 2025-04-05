@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/masihjahangiri/backhaul-easy/compare/v1.0.0...v1.1.0) (2025-04-05)
+
+
+### Features
+
+* add script versioning and IP information retrieval functions ([d108860](https://github.com/masihjahangiri/backhaul-easy/commit/d108860b784ebf8fe9f8cfb227968934682067ac))
+
 # 1.0.0 (2025-04-05)
 
 
