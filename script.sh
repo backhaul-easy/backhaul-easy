@@ -136,6 +136,7 @@ get_location() {
         "LU") echo "Luxembourg" ;;
         "MT") echo "Malta" ;;
         "IS") echo "Iceland" ;;
+        "IR") echo "Iran" ;;
         *) echo "$country_code" ;;
     esac
 }
