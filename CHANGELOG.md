@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/masihjahangiri/backhaul-easy/compare/v1.1.0...v1.2.0) (2025-04-05)
+
+
+### Features
+
+* implement caching for IP information and script version retrieval ([c73b4b8](https://github.com/masihjahangiri/backhaul-easy/commit/c73b4b8c4d29ea7dd71bda92a60f5913879f11a1))
+
 # [1.1.0](https://github.com/masihjahangiri/backhaul-easy/compare/v1.0.0...v1.1.0) (2025-04-05)
 
 
