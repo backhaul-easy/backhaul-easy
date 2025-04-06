@@ -1,3 +1,10 @@
+## [1.3.3](https://github.com/masihjahangiri/backhaul-easy/compare/v1.3.2...v1.3.3) (2025-04-06)
+
+
+### Bug Fixes
+
+* enhance IP information retrieval with improved API fallback and JSON validation ([e855e55](https://github.com/masihjahangiri/backhaul-easy/commit/e855e554afb9aeabda886702d1eb5848e43d1c84))
+
 ## [1.3.2](https://github.com/masihjahangiri/backhaul-easy/compare/v1.3.1...v1.3.2) (2025-04-06)
 
 
