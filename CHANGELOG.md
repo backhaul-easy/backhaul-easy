@@ -1,3 +1,10 @@
+## [1.3.4](https://github.com/masihjahangiri/backhaul-easy/compare/v1.3.3...v1.3.4) (2025-04-06)
+
+
+### Bug Fixes
+
+* get ip info issue ([64bea92](https://github.com/masihjahangiri/backhaul-easy/commit/64bea92b2077915b80ef71fbd3e2fa650f62862f))
+
 ## [1.3.3](https://github.com/masihjahangiri/backhaul-easy/compare/v1.3.2...v1.3.3) (2025-04-06)
 
 
