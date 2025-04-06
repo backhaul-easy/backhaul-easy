@@ -1,3 +1,10 @@
+## [1.3.2](https://github.com/masihjahangiri/backhaul-easy/compare/v1.3.1...v1.3.2) (2025-04-06)
+
+
+### Bug Fixes
+
+* improve IP information retrieval with multiple API support and enhanced error handling ([348d0b8](https://github.com/masihjahangiri/backhaul-easy/commit/348d0b811626ca2389e6d8394a12091b74bd4905))
+
 ## [1.3.1](https://github.com/masihjahangiri/backhaul-easy/compare/v1.3.0...v1.3.1) (2025-04-06)
 
 
