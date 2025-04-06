@@ -55,6 +55,73 @@ fi
 mkdir -p "$CACHE_DIR"
 
 # =============================================
+# Dependency Check Function
+# =============================================
+check_dependencies() {
+    local missing_deps=()
+    
+    # Check for jq
+    if ! command -v jq &> /dev/null; then
+        missing_deps+=("jq")
+    fi
+    
+    # Check for curl
+    if ! command -v curl &> /dev/null; then
+        missing_deps+=("curl")
+    fi
+    
+    # Check for wget
+    if ! command -v wget &> /dev/null; then
+        missing_deps+=("wget")
+    fi
+    
+    # Check for systemctl (for Linux systems)
+    if [[ "$OSTYPE" != "darwin"* ]] && ! command -v systemctl &> /dev/null; then
+        missing_deps+=("systemd")
+    fi
+    
+    # If any dependencies are missing, try to install them
+    if [ ${#missing_deps[@]} -ne 0 ]; then
+        echo -e "${YELLOW}Missing dependencies: ${missing_deps[*]}${NC}"
+        echo -e "${CYAN}Attempting to install missing dependencies...${NC}"
+        
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            # macOS
+            if ! command -v brew &> /dev/null; then
+                echo -e "${RED}Homebrew is not installed. Please install it first.${NC}"
+                echo -e "${YELLOW}Visit https://brew.sh/ for installation instructions.${NC}"
+                exit 1
+            fi
+            brew install "${missing_deps[@]}"
+        elif command -v apt-get &> /dev/null; then
+            # Debian/Ubuntu
+            sudo apt-get update
+            sudo apt-get install -y "${missing_deps[@]}"
+        elif command -v yum &> /dev/null; then
+            # CentOS/RHEL
+            sudo yum install -y "${missing_deps[@]}"
+        elif command -v dnf &> /dev/null; then
+            # Fedora
+            sudo dnf install -y "${missing_deps[@]}"
+        else
+            echo -e "${RED}Could not determine package manager. Please install the following dependencies manually:${NC}"
+            echo -e "${YELLOW}${missing_deps[*]}${NC}"
+            exit 1
+        fi
+        
+        # Verify installation
+        for dep in "${missing_deps[@]}"; do
+            if ! command -v "$dep" &> /dev/null; then
+                echo -e "${RED}Failed to install $dep. Please install it manually.${NC}"
+                exit 1
+            fi
+        done
+        
+        echo -e "${GREEN}All dependencies installed successfully.${NC}"
+    fi
+}
+
+# =============================================
 # Cache Management Functions
 # =============================================
 is_cache_expired() {
@@ -786,6 +853,9 @@ hawshemi_script() {
 # Script Entry Point
 # =============================================
 [[ $EUID -ne 0 ]] && { echo -e "${RED}This script must be run as root${NC}"; exit 1; }
+
+# Check and install dependencies
+check_dependencies
 
 # Simple command alias installation
 if [[ -f "$0" && ! "$0" =~ ^/dev/fd/ ]]; then
