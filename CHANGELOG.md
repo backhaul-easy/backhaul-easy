@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/masihjahangiri/backhaul-easy/compare/v1.3.4...v1.4.0) (2025-04-06)
+
+
+### Features
+
+* add dependency check function to ensure required tools are installed ([a52d4f8](https://github.com/masihjahangiri/backhaul-easy/commit/a52d4f884834042b17d534dfc91a3baa9ac12d16))
+
 ## [1.3.4](https://github.com/masihjahangiri/backhaul-easy/compare/v1.3.3...v1.3.4) (2025-04-06)
 
 
