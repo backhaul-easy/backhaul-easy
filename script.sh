@@ -83,28 +83,39 @@ get_script_version() {
 # =============================================
 get_ip_info() {
     if is_cache_expired "$IP_INFO_CACHE_FILE"; then
-        # Try multiple IP APIs, fallback if one fails
-        local api_urls=(
-            "https://ipinfo.io/json"
-            "https://ip-api.com/json"
-            "https://ifconfig.co/json"
-        )
-
-        for api_url in "${api_urls[@]}"; do
-            if curl -s --max-time 10 "$api_url" -o "$IP_INFO_CACHE_FILE"; then
-                # Verify the response is valid JSON (not HTML)
-                if grep -q '"ip"' "$IP_INFO_CACHE_FILE"; then
-                    break
-                fi
+        # Try ipinfo.io first
+        if ! curl -s https://ipinfo.io/json > "$IP_INFO_CACHE_FILE" 2>/dev/null; then
+            # If curl fails, try ipapi.co
+            if ! curl -s https://ipapi.co/json > "$IP_INFO_CACHE_FILE" 2>/dev/null; then
+                echo -e "${RED}Failed to fetch IP information from both APIs.${NC}" >&2
+                return 1
             fi
-        done
-
-        # Check final validity, fallback if no valid response
-        if ! grep -q '"ip"' "$IP_INFO_CACHE_FILE"; then
-            echo '{"ip":"Unknown","country":"Unknown","org":"Unknown"}' > "$IP_INFO_CACHE_FILE"
+        fi
+        
+        # Verify we got valid JSON from ipinfo.io
+        if ! jq -e . "$IP_INFO_CACHE_FILE" >/dev/null 2>&1; then
+            # If ipinfo.io returned invalid JSON, try ipapi.co
+            if ! curl -s https://ipapi.co/json > "$IP_INFO_CACHE_FILE" 2>/dev/null; then
+                echo -e "${RED}Failed to fetch IP information from ipapi.co.${NC}" >&2
+                rm -f "$IP_INFO_CACHE_FILE"
+                return 1
+            fi
+            
+            # Verify ipapi.co response is valid JSON
+            if ! jq -e . "$IP_INFO_CACHE_FILE" >/dev/null 2>&1; then
+                echo -e "${RED}Invalid JSON response received from both APIs.${NC}" >&2
+                rm -f "$IP_INFO_CACHE_FILE"
+                return 1
+            fi
         fi
     fi
-    cat "$IP_INFO_CACHE_FILE"
+    
+    # If cache file exists and is valid, return its contents
+    if [ -f "$IP_INFO_CACHE_FILE" ]; then
+        cat "$IP_INFO_CACHE_FILE"
+    else
+        return 1
+    fi
 }
 
 get_location() {
