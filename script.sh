@@ -83,7 +83,17 @@ get_script_version() {
 # =============================================
 get_ip_info() {
     if is_cache_expired "$IP_INFO_CACHE_FILE"; then
-        curl -s https://ipinfo.io/json > "$IP_INFO_CACHE_FILE"
+        # Try to get IP info with error handling
+        if ! curl -s https://ipinfo.io/json > "$IP_INFO_CACHE_FILE" 2>/dev/null; then
+            # If API fails, create a fallback response
+            cat > "$IP_INFO_CACHE_FILE" <<EOF
+{
+  "ip": "$(curl -s ifconfig.me || echo 'Unknown')",
+  "country": "Unknown",
+  "org": "Unknown"
+}
+EOF
+        fi
     fi
     cat "$IP_INFO_CACHE_FILE"
 }
@@ -92,6 +102,11 @@ get_location() {
     local ip_info
     ip_info=$(get_ip_info)
     local country_code=$(echo "$ip_info" | grep -o '"country": "[^"]*' | cut -d'"' -f4)
+    
+    # If country is Unknown, try to get it from IP
+    if [[ "$country_code" == "Unknown" ]]; then
+        country_code=$(curl -s ip-api.com/json | grep -o '"countryCode": "[^"]*' | cut -d'"' -f4 || echo "Unknown")
+    fi
     
     # Convert country code to full name
     case "$country_code" in
