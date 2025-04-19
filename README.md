@@ -18,9 +18,9 @@
 # 🚀 Backhaul Easy
 A powerful and user-friendly CLI tool for managing backhaul configurations with ease.
 
-[![GitHub license](https://img.shields.io/github/license/masihjahangiri/backhaul-easy)](https://github.com/masihjahangiri/backhaul-easy/blob/main/LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/masihjahangiri/backhaul-easy)](https://github.com/masihjahangiri/backhaul-easy/stargazers)
-[![GitHub issues](https://img.shields.io/github/issues/masihjahangiri/backhaul-easy)](https://github.com/masihjahangiri/backhaul-easy/issues)
+[![GitHub license](https://img.shields.io/github/license/backhaul-easy/backhaul-easy)](https://github.com/backhaul-easy/backhaul-easy/blob/main/LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/backhaul-easy/backhaul-easy)](https://github.com/backhaul-easy/backhaul-easy/stargazers)
+[![GitHub issues](https://img.shields.io/github/issues/backhaul-easy/backhaul-easy)](https://github.com/backhaul-easy/backhaul-easy/issues)
 
 </div>
 
@@ -57,7 +57,7 @@ Backhaul provides a robust solution with:
 ### One-Line Installation
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/masihjahangiri/backhaul-easy/main/script.sh)
+bash <(curl -Ls https://raw.githubusercontent.com/backhaul-easy/backhaul-easy/main/script.sh)
 ```
 
 After installation, you can run the tool using:
@@ -156,4 +156,4 @@ Backhaul is inspired by [Rathole](https://github.com/rapiz1/rathole) and takes i
 
 ---
 
-Made with ❤️ by [Masih Jahangiri](https://github.com/masihjahangiri)
+Made with ❤️ by [Masih Jahangiri](https://github.com/backhaul-easy)
