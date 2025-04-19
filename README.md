@@ -156,4 +156,4 @@ Backhaul is inspired by [Rathole](https://github.com/rapiz1/rathole) and takes i
 
 ---
 
-Made with ❤️ by [Masih Jahangiri](https://github.com/backhaul-easy)
+Made with ❤️ by [Masih Jahangiri](https://github.com/masihjahangiri)
